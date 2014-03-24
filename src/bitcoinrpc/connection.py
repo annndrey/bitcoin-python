@@ -20,10 +20,8 @@
 """
 Connect to Bitcoin server via JSON-RPC.
 """
-from bitcoinrpc.proxy import AuthServiceProxy
-from bitcoinrpc.exceptions import (wrap_exception, BitcoinException,
-                                   WalletPassphraseIncorrect,
-                                   WalletAlreadyUnlocked)
+from bitcoinrpc.proxy import JSONRPCException, AuthServiceProxy
+from bitcoinrpc.exceptions import _wrap_exception, WalletPassphraseIncorrect, WalletAlreadyUnlocked
 from bitcoinrpc.data import (ServerInfo, AccountInfo, AddressInfo, TransactionInfo,
                              AddressValidation, WorkItem, MiningInfo)
 
@@ -32,6 +30,8 @@ class BitcoinConnection(object):
     """
     A BitcoinConnection object defines a connection to a bitcoin server.
     It is a thin wrapper around a JSON-RPC API connection.
+
+    Up-to-date for SVN revision 198.
 
     Arguments to constructor:
 
@@ -49,25 +49,56 @@ class BitcoinConnection(object):
             s='s' if use_https else '',
             user=user, password=password, host=host, port=port)
         self.url = url
-        self.proxy = AuthServiceProxy(url, exception_wrapper=wrap_exception)
+        try:
+            self.proxy = AuthServiceProxy(url)
+        except JSONRPCException as e:
+            raise _wrap_exception(e.error)
 
+    def dumpprivkey(self, wid):
+        """
+        Dumps private key
+        """
+        try:
+            return self.proxy.dumpprivkey(wid)
+        except JSONRPCException as e:
+            raise _wrap_exception(e.error)
+		
+    def importprivkey(self, privkey, label="myprivkey"):
+        """
+        Imports private key
+        """
+        try:
+            self.proxy.importprivkey(privkey, label)
+            return "Your private key has been successfully imported"
+        except JSONRPCException as e:
+            raise _wrap_exception(e.error)
+		
     def stop(self):
         """
         Stop bitcoin server.
         """
-        self.proxy.stop()
+        try:
+            self.proxy.stop()
+        except JSONRPCException as e:
+            raise _wrap_exception(e.error)
 
     def getblock(self, hash):
         """
         Returns information about the given block hash.
         """
-        return self.proxy.getblock(hash)
+        try:
+            return self.proxy.getblock(hash)
+        except JSONRPCException as e:
+            raise _wrap_exception(e.error)
 
     def getblockcount(self):
         """
         Returns the number of blocks in the longest block chain.
         """
-        return self.proxy.getblockcount()
+        try:
+            return self.proxy.getblockcount()
+        except JSONRPCException as e:
+            raise _wrap_exception(e.error)
 
     def getblockhash(self, index):
         """
@@ -76,7 +107,10 @@ class BitcoinConnection(object):
         :param index: index ob the block
 
         """
-        return self.proxy.getblockhash(index)
+        try:
+            return self.proxy.getblockhash(index)
+        except JSONRPCException as e:
+            raise _wrap_exception(e.error)
 
     def getblocknumber(self):
         """
@@ -89,19 +123,28 @@ class BitcoinConnection(object):
         """
         Returns the number of connections to other nodes.
         """
-        return self.proxy.getconnectioncount()
+        try:
+            return self.proxy.getconnectioncount()
+        except JSONRPCException as e:
+            raise _wrap_exception(e.error)
 
     def getdifficulty(self):
         """
         Returns the proof-of-work difficulty as a multiple of the minimum difficulty.
         """
-        return self.proxy.getdifficulty()
+        try:
+            return self.proxy.getdifficulty()
+        except JSONRPCException as e:
+            raise _wrap_exception(e.error)
 
     def getgenerate(self):
         """
         Returns :const:`True` or :const:`False`, depending on whether generation is enabled.
         """
-        return self.proxy.getgenerate()
+        try:
+            return self.proxy.getgenerate()
+        except JSONRPCException as e:
+            raise _wrap_exception(e.error)
 
     def setgenerate(self, generate, genproclimit=None):
         """
@@ -113,29 +156,41 @@ class BitcoinConnection(object):
         - *genproclimit* -- Number of processors that are used for generation, -1 is unlimited.
 
         """
-        if genproclimit is None:
-            return self.proxy.setgenerate(generate)
-        else:
-            return self.proxy.setgenerate(generate, genproclimit)
+        try:
+            if genproclimit is None:
+                return self.proxy.setgenerate(generate)
+            else:
+                return self.proxy.setgenerate(generate, genproclimit)
+        except JSONRPCException as e:
+            raise _wrap_exception(e.error)
 
     def gethashespersec(self):
         """
         Returns a recent hashes per second performance measurement while generating.
         """
-        return self.proxy.gethashespersec()
+        try:
+            return self.proxy.gethashespersec()
+        except JSONRPCException as e:
+            raise _wrap_exception(e.error)
 
     def getinfo(self):
         """
         Returns an :class:`~bitcoinrpc.data.ServerInfo` object containing various state info.
         """
-        return ServerInfo(**self.proxy.getinfo())
+        try:
+            return ServerInfo(**self.proxy.getinfo())
+        except JSONRPCException as e:
+            raise _wrap_exception(e.error)
 
     def getmininginfo(self):
         """
         Returns an :class:`~bitcoinrpc.data.MiningInfo` object containing various
         mining state info.
         """
-        return MiningInfo(**self.proxy.getmininginfo())
+        try:
+            return MiningInfo(**self.proxy.getmininginfo())
+        except JSONRPCException as e:
+            raise _wrap_exception(e.error)
 
     def getnewaddress(self, account=None):
         """
@@ -147,10 +202,13 @@ class BitcoinConnection(object):
           so that payments received with the address will be credited to it.
 
         """
-        if account is None:
-            return self.proxy.getnewaddress()
-        else:
-            return self.proxy.getnewaddress(account)
+        try:
+            if account is None:
+                return self.proxy.getnewaddress()
+            else:
+                return self.proxy.getnewaddress(account)
+        except JSONRPCException as e:
+            raise _wrap_exception(e.error)
 
     def getaccountaddress(self, account):
         """
@@ -161,7 +219,10 @@ class BitcoinConnection(object):
         - *account* -- Account for which the address should be returned.
 
         """
-        return self.proxy.getaccountaddress(account)
+        try:
+            return self.proxy.getaccountaddress(account)
+        except JSONRPCException as e:
+            raise _wrap_exception(e.error)
 
     def setaccount(self, bitcoinaddress, account):
         """
@@ -173,7 +234,10 @@ class BitcoinConnection(object):
         - *account* -- Account to associate the address to.
 
         """
-        return self.proxy.setaccount(bitcoinaddress, account)
+        try:
+            return self.proxy.setaccount(bitcoinaddress, account)
+        except JSONRPCException as e:
+            raise _wrap_exception(e.error)
 
     def getaccount(self, bitcoinaddress):
         """
@@ -183,7 +247,10 @@ class BitcoinConnection(object):
 
         - *bitcoinaddress* -- Bitcoin address to get account for.
         """
-        return self.proxy.getaccount(bitcoinaddress)
+        try:
+            return self.proxy.getaccount(bitcoinaddress)
+        except JSONRPCException as e:
+            raise _wrap_exception(e.error)
 
     def getaddressesbyaccount(self, account):
         """
@@ -193,7 +260,10 @@ class BitcoinConnection(object):
 
         - *account* -- Account to get list of addresses for.
         """
-        return self.proxy.getaddressesbyaccount(account)
+        try:
+            return self.proxy.getaddressesbyaccount(account)
+        except JSONRPCException as e:
+            raise _wrap_exception(e.error)
 
     def sendtoaddress(self, bitcoinaddress, amount, comment=None, comment_to=None):
         """
@@ -202,18 +272,21 @@ class BitcoinConnection(object):
         Arguments:
 
         - *bitcoinaddress* -- Bitcoin address to send to.
-        - *amount* -- Amount to send (float, rounded to the nearest 0.00000001).
+        - *amount* -- Amount to send (float, rounded to the nearest 0.01).
         - *minconf* -- Minimum number of confirmations required for transferred balance.
         - *comment* -- Comment for transaction.
         - *comment_to* -- Comment for to-address.
 
         """
-        if comment is None:
-            return self.proxy.sendtoaddress(bitcoinaddress, amount)
-        elif comment_to is None:
-            return self.proxy.sendtoaddress(bitcoinaddress, amount, comment)
-        else:
-            return self.proxy.sendtoaddress(bitcoinaddress, amount, comment, comment_to)
+        try:
+            if comment is None:
+                return self.proxy.sendtoaddress(bitcoinaddress, amount)
+            elif comment_to is None:
+                return self.proxy.sendtoaddress(bitcoinaddress, amount, comment)
+            else:
+                return self.proxy.sendtoaddress(bitcoinaddress, amount, comment, comment_to)
+        except JSONRPCException as e:
+            raise _wrap_exception(e.error)
 
     def getreceivedbyaddress(self, bitcoinaddress, minconf=1):
         """
@@ -226,7 +299,10 @@ class BitcoinConnection(object):
 
         - *minconf* -- Number of confirmations to require, defaults to 1.
         """
-        return self.proxy.getreceivedbyaddress(bitcoinaddress, minconf)
+        try:
+            return self.proxy.getreceivedbyaddress(bitcoinaddress, minconf)
+        except JSONRPCException as e:
+            raise _wrap_exception(e.error)
 
     def getreceivedbyaccount(self, account, minconf=1):
         """
@@ -239,7 +315,10 @@ class BitcoinConnection(object):
         - *minconf* -- Number of confirmations to require, defaults to 1.
 
         """
-        return self.proxy.getreceivedbyaccount(account, minconf)
+        try:
+            return self.proxy.getreceivedbyaccount(account, minconf)
+        except JSONRPCException as e:
+            raise _wrap_exception(e.error)
 
     def gettransaction(self, txid):
         """
@@ -250,7 +329,10 @@ class BitcoinConnection(object):
         - *txid* -- Transactiond id for which the info should be returned
 
         """
-        return TransactionInfo(**self.proxy.gettransaction(txid))
+        try:
+            return TransactionInfo(**self.proxy.gettransaction(txid))
+        except JSONRPCException as e:
+            raise _wrap_exception(e.error)
 
     def getrawtransaction(self, txid, verbose=True):
         """
@@ -262,25 +344,12 @@ class BitcoinConnection(object):
         - *verbose* -- If False, return only the "hex" of the transaction.
 
         """
-        if verbose:
-            return TransactionInfo(**self.proxy.getrawtransaction(txid, 1))
-        return self.proxy.getrawtransaction(txid, 0)
-
-    def gettxout(self, txid, index, mempool=True):
-        """
-        Returns details about an unspent transaction output (UTXO)
-
-        Arguments:
-
-        - *txid* -- Transactiond id for which the info should be returned.
-        - *index* -- The output index.
-        - *mempool* -- Add memory pool transactions.
-        """
-        tx = self.proxy.gettxout(txid, index, mempool)
-        if tx != None:
-            return TransactionInfo(**tx)
-        else:
-            return TransactionInfo()
+        try:
+            if verbose:
+                return TransactionInfo(**self.proxy.getrawtransaction(txid, 1))
+            return self.proxy.getrawtransaction(txid, 0)
+        except JSONRPCException as e:
+            raise _wrap_exception(e.error)
 
     def createrawtransaction(self, inputs, outputs):
         """
@@ -303,7 +372,10 @@ class BitcoinConnection(object):
         - *outputs* -- A dictionary mapping (public) addresses to the amount
                        they are to be paid.
         """
-        return self.proxy.createrawtransaction(inputs, outputs)
+        try:
+            return self.proxy.createrawtransaction(inputs, outputs)
+        except JSONRPCException as e:
+            raise _wrap_exception(e.error)
 
     def signrawtransaction(self, hexstring, previous_transactions=None, private_keys=None):
         """
@@ -323,7 +395,10 @@ class BitcoinConnection(object):
         - *private_keys* -- A (possibly empty) list of base58-encoded private
             keys that, if given, will be the only keys used to sign the transaction.
         """
-        return dict(self.proxy.signrawtransaction(hexstring, previous_transactions, private_keys))
+        try:
+            return dict(self.proxy.signrawtransaction(hexstring, previous_transactions, private_keys))
+        except JSONRPCException as e:
+            raise _wrap_exception(e.error)
 
     def decoderawtransaction(self, hexstring):
         """
@@ -333,12 +408,18 @@ class BitcoinConnection(object):
 
         - *hexstring* -- A hex string of the transaction to be decoded.
         """
-        return dict(self.proxy.decoderawtransaction(hexstring))
+        try:
+            return dict(self.proxy.decoderawtransaction(hexstring))
+        except JSONRPCException as e:
+            raise _wrap_exception(e.error)
 
     def listsinceblock(self, block_hash):
-        res = self.proxy.listsinceblock(block_hash)
-        res['transactions'] = [TransactionInfo(**x) for x in res['transactions']]
-        return res
+        try:
+            res = self.proxy.listsinceblock(block_hash)
+            res['transactions'] = [TransactionInfo(**x) for x in res['transactions']]
+            return res
+        except JSONRPCException as e:
+            raise _wrap_exception(e.error)
 
     def listreceivedbyaddress(self, minconf=1, includeempty=False):
         """
@@ -352,8 +433,11 @@ class BitcoinConnection(object):
         - *includeempty* -- Whether to include addresses that haven't received any payments.
 
         """
-        return [AddressInfo(**x) for x in
-                self.proxy.listreceivedbyaddress(minconf, includeempty)]
+        try:
+            return [AddressInfo(**x) for x in
+                    self.proxy.listreceivedbyaddress(minconf, includeempty)]
+        except JSONRPCException as e:
+            raise _wrap_exception(e.error)
 
     def listaccounts(self, minconf=1, as_dict=False):
         """
@@ -364,10 +448,13 @@ class BitcoinConnection(object):
         - *minconf* -- Minimum number of confirmations before payments are included.
         - *as_dict* -- Returns a dictionary of account names, with their balance as values.
         """
-        if as_dict:
-            return dict(self.proxy.listaccounts(minconf))
-        else:
-            return self.proxy.listaccounts(minconf).keys()
+        try:
+            if as_dict:
+                return dict(self.proxy.listaccounts(minconf))
+            else:
+                return self.proxy.listaccounts(minconf).keys()
+        except JSONRPCException as e:
+            raise _wrap_exception(e.error)
 
     def listreceivedbyaccount(self, minconf=1, includeempty=False):
         """
@@ -381,8 +468,11 @@ class BitcoinConnection(object):
 
         - *includeempty* -- Whether to include addresses that haven't received any payments.
         """
-        return [AccountInfo(**x) for x in
-                self.proxy.listreceivedbyaccount(minconf, includeempty)]
+        try:
+            return [AccountInfo(**x) for x in
+                    self.proxy.listreceivedbyaccount(minconf, includeempty)]
+        except JSONRPCException as e:
+            raise _wrap_exception(e.error)
 
     def listtransactions(self, account=None, count=10, from_=0, address=None):
         """
@@ -398,10 +488,13 @@ class BitcoinConnection(object):
         - *from_* -- Skip the first <from_> transactions.
         - *address* -- Receive address to consider
         """
-        accounts = [account] if account is not None else self.listaccounts(as_dict=True).keys()
-        return [TransactionInfo(**tx) for acc in accounts for
-                tx in self.proxy.listtransactions(acc, count, from_) if
-                address is None or tx["address"] == address]
+        accounts = [account] if account is not None else self.listaccounts(as_dict=True).iterkeys()
+        try:
+            return [TransactionInfo(**tx) for acc in accounts for
+                    tx in self.proxy.listtransactions(acc, count, from_) if
+                    address is None or tx["address"] == address]
+        except JSONRPCException as e:
+            raise _wrap_exception(e.error)
 
     def backupwallet(self, destination):
         """
@@ -412,7 +505,10 @@ class BitcoinConnection(object):
         - *destination* -- directory or path with filename to backup wallet to.
 
         """
-        return self.proxy.backupwallet(destination)
+        try:
+            return self.proxy.backupwallet(destination)
+        except JSONRPCException as e:
+            raise _wrap_exception(e.error)
 
     def validateaddress(self, validateaddress):
         """
@@ -425,7 +521,10 @@ class BitcoinConnection(object):
 
         - *validateaddress*
         """
-        return AddressValidation(**self.proxy.validateaddress(validateaddress))
+        try:
+            return AddressValidation(**self.proxy.validateaddress(validateaddress))
+        except JSONRPCException as e:
+            raise _wrap_exception(e.error)
 
     def getbalance(self, account=None, minconf=None):
         """
@@ -437,11 +536,14 @@ class BitcoinConnection(object):
 
         """
         args = []
-        if account is not None:
+        if account:
             args.append(account)
             if minconf is not None:
                 args.append(minconf)
-        return self.proxy.getbalance(*args)
+        try:
+            return self.proxy.getbalance(*args)
+        except JSONRPCException as e:
+            raise _wrap_exception(e.error)
 
     def move(self, fromaccount, toaccount, amount, minconf=1, comment=None):
         """
@@ -456,10 +558,13 @@ class BitcoinConnection(object):
         - *comment* -- Comment to add to transaction log.
 
         """
-        if comment is None:
-            return self.proxy.move(fromaccount, toaccount, amount, minconf)
-        else:
-            return self.proxy.move(fromaccount, toaccount, amount, minconf, comment)
+        try:
+            if comment is None:
+                return self.proxy.move(fromaccount, toaccount, amount, minconf)
+            else:
+                return self.proxy.move(fromaccount, toaccount, amount, minconf, comment)
+        except JSONRPCException as e:
+            raise _wrap_exception(e.error)
 
     def sendfrom(self, fromaccount, tobitcoinaddress, amount, minconf=1, comment=None,
                  comment_to=None):
@@ -479,13 +584,16 @@ class BitcoinConnection(object):
         - *comment_to* -- Comment for to-address.
 
         """
-        if comment is None:
-            return self.proxy.sendfrom(fromaccount, tobitcoinaddress, amount, minconf)
-        elif comment_to is None:
-            return self.proxy.sendfrom(fromaccount, tobitcoinaddress, amount, minconf, comment)
-        else:
-            return self.proxy.sendfrom(fromaccount, tobitcoinaddress, amount, minconf,
-                                       comment, comment_to)
+        try:
+            if comment is None:
+                return self.proxy.sendfrom(fromaccount, tobitcoinaddress, amount, minconf)
+            elif comment_to is None:
+                return self.proxy.sendfrom(fromaccount, tobitcoinaddress, amount, minconf, comment)
+            else:
+                return self.proxy.sendfrom(fromaccount, tobitcoinaddress, amount, minconf,
+                                           comment, comment_to)
+        except JSONRPCException as e:
+            raise _wrap_exception(e.error)
 
     def sendmany(self, fromaccount, todict, minconf=1, comment=None):
         """
@@ -502,10 +610,13 @@ class BitcoinConnection(object):
         - *comment* -- Comment for transaction.
 
         """
-        if comment is None:
-            return self.proxy.sendmany(fromaccount, todict, minconf)
-        else:
-            return self.proxy.sendmany(fromaccount, todict, minconf, comment)
+        try:
+            if comment is None:
+                return self.proxy.sendmany(fromaccount, todict, minconf)
+            else:
+                return self.proxy.sendmany(fromaccount, todict, minconf, comment)
+        except JSONRPCException as e:
+            raise _wrap_exception(e.error)
 
     def verifymessage(self, bitcoinaddress, signature, message):
         """
@@ -520,7 +631,10 @@ class BitcoinConnection(object):
         - *message* -- the message that was originally signed
 
         """
-        return self.proxy.verifymessage(bitcoinaddress, signature, message)
+        try:
+            return self.proxy.verifymessage(bitcoinaddress, signature, message)
+        except JSONRPCException as e:
+            raise _wrap_exception(e.error)
 
     def getwork(self, data=None):
         """
@@ -535,11 +649,14 @@ class BitcoinConnection(object):
         - *data* -- Result from remote mining.
 
         """
-        if data is None:
-            # Only if no data provided, it returns a WorkItem
-            return WorkItem(**self.proxy.getwork())
-        else:
-            return self.proxy.getwork(data)
+        try:
+            if data is None:
+                # Only if no data provided, it returns a WorkItem
+                return WorkItem(**self.proxy.getwork())
+            else:
+                return self.proxy.getwork(data)
+        except JSONRPCException as e:
+            raise _wrap_exception(e.error)
 
     def listunspent(self, minconf=1, maxconf=999999):
         """
@@ -553,12 +670,18 @@ class BitcoinConnection(object):
 
 
         """
-        return [TransactionInfo(**tx) for tx in
-                self.proxy.listunspent(minconf, maxconf)]
-
+        try:
+            return [TransactionInfo(**tx) for tx in
+                    self.proxy.listunspent(minconf, maxconf)]
+        except JSONRPCException as e:
+            raise _wrap_exception(e.error)
+    
     def keypoolrefill(self):
         "Fills the keypool, requires wallet passphrase to be set."
-        self.proxy.keypoolrefill()
+        try:
+            self.proxy.keypoolrefill()
+        except JSONRPCException as e:
+            raise _wrap_exception(e.error)
 
     def walletpassphrase(self, passphrase, timeout, dont_raise=False):
         """
@@ -575,13 +698,14 @@ class BitcoinConnection(object):
         try:
             self.proxy.walletpassphrase(passphrase, timeout)
             return True
-        except BitcoinException as exception:
+        except JSONRPCException as e:
+            json_exception = _wrap_exception(e.error)
             if dont_raise:
-                if isinstance(exception, WalletPassphraseIncorrect):
+                if isinstance(json_exception, WalletPassphraseIncorrect):
                     return False
-                elif isinstance(exception, WalletAlreadyUnlocked):
+                elif isinstance(json_exception, WalletAlreadyUnlocked):
                     return True
-            raise exception
+            raise json_exception
 
     def walletlock(self):
         """
@@ -590,7 +714,10 @@ class BitcoinConnection(object):
         again before being able to call any methods which require the wallet
         to be unlocked.
         """
-        return self.proxy.walletlock()
+        try:
+            return self.proxy.walletlock()
+        except JSONRPCException as e:
+            raise _wrap_exception(e.error)
 
     def walletpassphrasechange(self, oldpassphrase, newpassphrase, dont_raise=False):
         """
@@ -604,43 +731,8 @@ class BitcoinConnection(object):
         try:
             self.proxy.walletpassphrasechange(oldpassphrase, newpassphrase)
             return True
-        except BitcoinException as exception:
-            if dont_raise and isinstance(exception, WalletPassphraseIncorrect):
+        except JSONRPCException as e:
+            json_exception = _wrap_exception(e.error)
+            if dont_raise and isinstance(json_exception, WalletPassphraseIncorrect):
                 return False
-            raise exception
-
-    def dumpprivkey(self, address):
-        """
-        Returns the private key belonging to <address>.
-
-        Arguments:
-
-        - *address* -- Bitcoin address whose private key should be returned.
-        """
-        return self.proxy.dumpprivkey(address)
-
-    def signmessage(self, address, message):
-        """
-        Sign messages, returns the signature
-
-        :param address: Bitcoin address used to sign a message
-        :type address: str or unicode
-        :param message: The message to sign
-        :type message: str or unicode
-        :rtype: unicode
-        """
-        return self.proxy.signmessage(address, message)
-
-    def verifymessage(self, address, signature, message):
-        """
-        Verify a signed message
-
-        :param address: Bitcoin address used to sign a message
-        :type address: str or unicode
-        :param signature: The signature
-        :type signature: unicode
-        :param message: The message to sign
-        :type message: str or unicode
-        :rtype: bool
-        """
-        return self.proxy.verifymessage(address, signature, message)
+            raise json_exception
